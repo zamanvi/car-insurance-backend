@@ -19,10 +19,32 @@ Expected Response:
 ```json
 {
   "success": true,
-  "message": "Backend is running",
+  "message": "✅ Backend is healthy!",
+  "city": "nyc",
   "timestamp": "2026-09-05T..."
 }
 ```
+
+---
+
+## 🔐 Admin Panel (verified working 2026-09-05)
+
+```
+Login page: https://car-insurance-backend-production-a1ec.up.railway.app/admin/login.html
+
+Email:    admin@hackrate.nyc
+Password: HackRate2026!Admin
+```
+
+Admin access is a real role check (`role: "admin"` on the User document,
+embedded in the JWT). Bootstrapped via the `ADMIN_EMAIL` Railway variable:
+registering with that exact email gets `role: "admin"`; every other
+registration gets `role: "user"` and is correctly rejected by
+`/api/admin/*` routes.
+
+**To add a second admin:** temporarily change `ADMIN_EMAIL` on Railway to
+the new address, register that account once, then change it back (or
+manually flip `role` to `"admin"` in MongoDB Atlas's Data Explorer).
 
 ---
 

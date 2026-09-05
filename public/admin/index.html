@@ -247,6 +247,9 @@
               <td>$${e.estimatedSavings}</td>
             </tr>
           `).join('');
+        } else {
+          document.getElementById('pirp-tbody').innerHTML =
+            '<tr><td colspan="5" style="text-align:center;color:#6B7280;">No PIRP enrollments yet</td></tr>';
         }
       } catch (error) {
         console.error('Error:', error);

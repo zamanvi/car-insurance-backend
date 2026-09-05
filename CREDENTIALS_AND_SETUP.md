@@ -7,12 +7,12 @@
 ## 🎯 LIVE BACKEND URL
 
 ```
-https://car-insurance-backend-production-a1ecup.railway.app
+https://car-insurance-backend-production-a1ec.up.railway.app
 ```
 
 ### Test Endpoint
 ```
-https://car-insurance-backend-production-a1ecup.railway.app/api/health
+https://car-insurance-backend-production-a1ec.up.railway.app/api/health
 ```
 
 Expected Response:
@@ -88,7 +88,7 @@ git clone https://github.com/zamanvi/car-insurance-backend.git
 ### City Detection Methods
 1. Query parameter: `?city=nyc`
 2. Header: `X-City: nyc`
-3. Subdomain: `nyc.car-insurance-backend-production-a1ecup.railway.app`
+3. Subdomain: `nyc.car-insurance-backend-production-a1ec.up.railway.app`
 4. Default: NYC (if not specified)
 
 ### Key Endpoints
@@ -105,7 +105,7 @@ git clone https://github.com/zamanvi/car-insurance-backend.git
 ### Android/React Native Implementation
 
 ```javascript
-const BACKEND_URL = "https://car-insurance-backend-production-a1ecup.railway.app";
+const BACKEND_URL = "https://car-insurance-backend-production-a1ec.up.railway.app";
 
 // Example: Get insurance quotes for NYC
 fetch(`${BACKEND_URL}/api/insurance/get-quotes`, {

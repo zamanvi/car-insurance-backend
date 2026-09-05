@@ -18,12 +18,12 @@ Build **6 city-specific Android apps** (NYC, Chicago, DC, Boston, LA, Miami) tha
 
 ### **Backend URL (LIVE NOW)**
 ```
-https://car-insurance-backend-production-a1ecup.railway.app
+https://car-insurance-backend-production-a1ec.up.railway.app
 ```
 
 ### **Health Check Endpoint**
 ```
-GET https://car-insurance-backend-production-a1ecup.railway.app/api/health
+GET https://car-insurance-backend-production-a1ec.up.railway.app/api/health
 
 Response:
 {
@@ -51,7 +51,7 @@ Password: wWM1lJ9MO14SS0Qv
 All apps connect to same backend. City detected via:
 - Query parameter: `?city=nyc`
 - Header: `X-City: nyc`
-- Subdomain: `nyc.car-insurance-backend-production-a1ecup.railway.app`
+- Subdomain: `nyc.car-insurance-backend-production-a1ec.up.railway.app`
 
 Supported cities:
 - NYC (nyc)
@@ -302,7 +302,7 @@ Time: 1-2 days per app (3-4 weeks total)
 
 ### **Get Insurance Quotes**
 ```javascript
-const BACKEND_URL = "https://car-insurance-backend-production-a1ecup.railway.app";
+const BACKEND_URL = "https://car-insurance-backend-production-a1ec.up.railway.app";
 const CITY = "nyc"; // Changes per app
 
 // Request

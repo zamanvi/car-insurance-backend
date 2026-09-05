@@ -1,28 +1,33 @@
-import NodeCache from 'node-cache';
+// Simple in-memory TTL cache -- no external dependency (node-cache was
+// removed from package.json earlier but this file still imported it,
+// which would have crashed the process the moment any route using it
+// was actually hit).
+const store = new Map();
 
-const cache = new NodeCache({ stdTTL: 300 });
+const isExpired = (entry) => Date.now() > entry.expiresAt;
 
-export const cacheMiddleware = (duration = 300) => {
+export const cacheMiddleware = (durationSeconds = 300) => {
   return (req, res, next) => {
     if (req.method !== 'GET') {
       return next();
     }
 
     const key = `${req.path}_${req.userId || 'public'}`;
-    const cachedResponse = cache.get(key);
+    const entry = store.get(key);
 
-    if (cachedResponse) {
-      console.log(`Cache hit for ${key}`);
-      return res.json(cachedResponse);
+    if (entry && !isExpired(entry)) {
+      return res.json(entry.data);
+    }
+    if (entry) {
+      store.delete(key);
     }
 
-    const originalJson = res.json;
-
-    res.json = function(data) {
+    const originalJson = res.json.bind(res);
+    res.json = (data) => {
       if (res.statusCode === 200) {
-        cache.set(key, data, duration);
+        store.set(key, { data, expiresAt: Date.now() + durationSeconds * 1000 });
       }
-      originalJson.call(this, data);
+      return originalJson(data);
     };
 
     next();
@@ -30,10 +35,9 @@ export const cacheMiddleware = (duration = 300) => {
 };
 
 export const clearCache = (pattern) => {
-  const keys = cache.keys();
-  keys.forEach(key => {
+  for (const key of store.keys()) {
     if (key.includes(pattern)) {
-      cache.del(key);
+      store.delete(key);
     }
-  });
+  }
 };

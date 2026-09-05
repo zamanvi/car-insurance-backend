@@ -24,17 +24,24 @@ router.post('/register', authLimiter, async (req, res, next) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // The one bootstrap path to an admin account: register with the email
+    // in ADMIN_EMAIL (set on Railway) and you get role 'admin'. Every
+    // other registration is a normal driver account.
+    const isBootstrapAdmin = process.env.ADMIN_EMAIL &&
+      email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase();
+
     const user = new User({
       email,
       password: hashedPassword,
       name,
-      phone
+      phone,
+      role: isBootstrapAdmin ? 'admin' : 'user'
     });
 
     await user.save();
 
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '30d' }
     );
@@ -48,7 +55,8 @@ router.post('/register', authLimiter, async (req, res, next) => {
       user: {
         id: user._id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        role: user.role
       }
     });
 
@@ -81,7 +89,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
     });
 
     const token = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '30d' }
     );
@@ -94,6 +102,7 @@ router.post('/login', authLimiter, async (req, res, next) => {
         id: user._id,
         email: user.email,
         name: user.name,
+        role: user.role,
         dmvPoints: user.dmvPoints,
         tlcPoints: user.tlcPoints
       }

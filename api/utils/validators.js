@@ -22,10 +22,10 @@ export const validateLogin = (data) => {
 
 export const validateInsuranceQuote = (data) => {
   const schema = Joi.object({
-    dmvPoints: Joi.number().min(0).max(12).required(),
-    tlcPoints: Joi.number().min(0).max(5).required(),
-    annualMiles: Joi.number().min(0).required(),
-    coverage: Joi.string().required()
+    dmvPoints: Joi.number().min(0).max(30).required(),
+    tlcPoints: Joi.number().min(0).max(30).required(),
+    vehicleType: Joi.string().valid('Sedan', 'SUV', 'Wheelchair accessible').default('Sedan'),
+    yearsLicensed: Joi.number().min(0).max(60).default(0)
   });
 
   return schema.validate(data);

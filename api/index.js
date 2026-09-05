@@ -1,22 +1,21 @@
 import express from 'express';
-import cors from 'cors';
-import compression from 'compression';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import dotenv from 'dotenv';
-import { connectDB } from './config/database.js';
-import { errorHandler } from './middleware/errorHandler.js';
-import { generalLimiter, apiLimiter } from './middleware/rateLimiter.js';
-import { cityMiddleware } from './middleware/city.js';
 
-// Routes
-import authRoutes from './routes/auth.js';
-import pirpRoutes from './routes/pirp.js';
-import insuranceRoutes from './routes/insurance.js';
-import tlcRoutes from './routes/tlc.js';
-import adminRoutes from './routes/admin.js';
+const app = express();
 
-dotenv.config();
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    message: '✅ Backend is healthy!',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
 
 const app = express();
 

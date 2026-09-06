@@ -21,9 +21,14 @@ export const validateLogin = (data) => {
 };
 
 export const validateInsuranceQuote = (data) => {
+  // 10 is the real ceiling for both systems: NYC TLC license is revoked
+  // at 10+ TLC points (15-month lookback), and NY State's own DMV
+  // suspension threshold is also 10 points (24-month period, as of Feb
+  // 2026). An active, unrevoked driver realistically cannot exceed 10
+  // on either scale -- matches the same bound enforced client-side.
   const schema = Joi.object({
-    dmvPoints: Joi.number().min(0).max(30).required(),
-    tlcPoints: Joi.number().min(0).max(30).required(),
+    dmvPoints: Joi.number().min(0).max(10).required(),
+    tlcPoints: Joi.number().min(0).max(10).required(),
     vehicleType: Joi.string().valid('Sedan', 'SUV', 'Wheelchair accessible').default('Sedan'),
     yearsLicensed: Joi.number().min(0).max(60).default(0)
   });

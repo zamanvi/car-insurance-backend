@@ -2,6 +2,7 @@ import express from 'express';
 import User from '../models/User.js';
 import PIRPEnrollment from '../models/PIRPEnrollment.js';
 import InsuranceQuote from '../models/InsuranceQuote.js';
+import QuoteLog from '../models/QuoteLog.js';
 import TLCTicket from '../models/TLCTicket.js';
 import jwt from 'jsonwebtoken';
 import { cacheMiddleware } from '../middleware/cache.js';
@@ -88,36 +89,24 @@ router.get('/stats/pirp', verifyAdmin, cacheMiddleware(60), async (req, res) => 
 
 router.get('/stats/quotes', verifyAdmin, cacheMiddleware(60), async (req, res) => {
   try {
-    const [totalQuotes, quotes] = await Promise.all([
+    // The app has no login, so real driver traffic never creates an
+    // InsuranceQuote (that model requires userId) -- it lands in QuoteLog
+    // instead (see api/routes/insurance.js /get-quotes). totalQuotes must
+    // count both so the dashboard doesn't sit at 0 forever, and the
+    // recent list comes from QuoteLog since that's where real rows are.
+    const [loggedCount, savedCount, quotes] = await Promise.all([
+      QuoteLog.countDocuments(),
       InsuranceQuote.countDocuments(),
-      InsuranceQuote.aggregate([
-        {
-          $lookup: {
-            from: 'users',
-            localField: 'userId',
-            foreignField: '_id',
-            as: 'user'
-          }
-        },
-        { $unwind: '$user' },
-        { $sort: { quotationDate: -1 } },
-        { $limit: 15 },
-        {
-          $project: {
-            userEmail: '$user.email',
-            company: 1,
-            monthlyPremium: 1,
-            coverage: 1,
-            ratings: 1,
-            quotationDate: 1
-          }
-        }
-      ])
+      QuoteLog.find()
+        .lean()
+        .sort({ createdAt: -1 })
+        .limit(15)
+        .select('city dmvPoints tlcPoints vehicleType bestProvider bestPremium createdAt')
     ]);
 
     res.json({
       success: true,
-      totalQuotes,
+      totalQuotes: loggedCount + savedCount,
       quotes
     });
   } catch (error) {

@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import InsuranceQuote from '../models/InsuranceQuote.js';
+import QuoteLog from '../models/QuoteLog.js';
 import { cacheMiddleware, clearCache } from '../middleware/cache.js';
 import { validateInsuranceQuote } from '../utils/validators.js';
 
@@ -99,6 +100,20 @@ router.post('/get-quotes', cacheMiddleware(600), async (req, res) => {
       city,
       quotes
     });
+
+    // Fire-and-forget anonymous usage log. The app has no login, so this
+    // is the only signal the admin dashboard has of real driver traffic --
+    // it must never be able to fail or delay the response above.
+    const best = quotes[0];
+    QuoteLog.create({
+      city,
+      dmvPoints,
+      tlcPoints,
+      vehicleType,
+      yearsLicensed,
+      bestProvider: best?.provider,
+      bestPremium: best?.finalPremium
+    }).catch((err) => console.error('QuoteLog insert failed:', err.message));
 
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -15,8 +15,9 @@ const quoteLogSchema = new mongoose.Schema({
   tlcPoints: Number,
   vehicleType: String,
   yearsLicensed: Number,
-  bestProvider: String,
-  bestPremium: Number,
+  // Ballpark estimate only -- never attributed to a specific named
+  // carrier (see api/routes/insurance.js CITY_CARRIERS comment).
+  estimatedYearly: Number,
   createdAt: {
     type: Date,
     default: Date.now,

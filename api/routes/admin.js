@@ -101,7 +101,7 @@ router.get('/stats/quotes', verifyAdmin, cacheMiddleware(60), async (req, res) =
         .lean()
         .sort({ createdAt: -1 })
         .limit(15)
-        .select('city dmvPoints tlcPoints vehicleType bestProvider bestPremium createdAt')
+        .select('city dmvPoints tlcPoints vehicleType estimatedYearly createdAt')
     ]);
 
     res.json({

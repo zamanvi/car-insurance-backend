@@ -24,38 +24,56 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Real carriers per city. NYC is the one that matters right now -- these
-// are the actual major TLC/hack insurers, with base premiums matched to
-// the Hack Rate design concept so the instant local estimate in the app
-// and this live quote never disagree by an absurd margin.
+// Real, currently-active carriers per city, verified against DFS/company
+// sites -- NOT a "base premium" per carrier. These companies don't publish
+// rate cards (rates depend on broker quote, driving history, vehicle age,
+// etc.), so attaching a specific invented dollar figure to a specific real
+// company's name would be a fabricated pricing claim about that business.
+// Each entry is just "who to check with" -- the website is where a driver
+// gets a REAL quote. (Earlier version listed Global Liberty, which was
+// liquidated/insolvent in 2021, and "Ideal Indemnity", which does not
+// exist as a real company -- both removed.)
 const CITY_CARRIERS = {
   nyc: [
-    { provider: 'American Transit', base: 7140 },
-    { provider: 'Global Liberty', base: 7890 },
-    { provider: 'Ideal Indemnity', base: 8320 }
+    { provider: 'American Transit', website: 'https://www.american-transit.com' },
+    { provider: 'Hereford Insurance', website: 'https://www.herefordinsurance.com' },
+    { provider: 'Affirmative Direct', website: 'https://www.affirmativedirect.com' }
   ],
   chicago: [
-    { provider: 'Progressive Commercial', base: 3200 },
-    { provider: 'Geico Commercial', base: 2950 },
-    { provider: 'State Farm', base: 3100 }
+    { provider: 'Progressive Commercial', website: 'https://www.progressivecommercial.com' },
+    { provider: 'Geico Commercial', website: 'https://www.geico.com/commercial-auto-insurance/' },
+    { provider: 'State Farm', website: 'https://www.statefarm.com' }
   ],
   dc: [
-    { provider: 'Progressive Commercial', base: 3400 },
-    { provider: 'Geico Commercial', base: 3150 }
+    { provider: 'Progressive Commercial', website: 'https://www.progressivecommercial.com' },
+    { provider: 'Geico Commercial', website: 'https://www.geico.com/commercial-auto-insurance/' }
   ],
   boston: [
-    { provider: 'Progressive Commercial', base: 3600 },
-    { provider: 'Geico Commercial', base: 3350 }
+    { provider: 'Progressive Commercial', website: 'https://www.progressivecommercial.com' },
+    { provider: 'Geico Commercial', website: 'https://www.geico.com/commercial-auto-insurance/' }
   ],
   la: [
-    { provider: 'Progressive Commercial', base: 3300 },
-    { provider: 'Geico Commercial', base: 3050 },
-    { provider: 'USAA', base: 2900 }
+    { provider: 'Progressive Commercial', website: 'https://www.progressivecommercial.com' },
+    { provider: 'Geico Commercial', website: 'https://www.geico.com/commercial-auto-insurance/' },
+    { provider: 'USAA', website: 'https://www.usaa.com' }
   ],
   miami: [
-    { provider: 'Progressive Commercial', base: 3500 },
-    { provider: 'Geico Commercial', base: 3250 }
+    { provider: 'Progressive Commercial', website: 'https://www.progressivecommercial.com' },
+    { provider: 'Geico Commercial', website: 'https://www.geico.com/commercial-auto-insurance/' }
   ]
+};
+
+// A single ballpark market-rate estimate, driven by public rate-trend data
+// for each city -- deliberately NOT attributed to any one named carrier
+// (see CITY_CARRIERS comment above for why). Presented to the driver as
+// "estimated, not an official quote."
+const CITY_BASE_ESTIMATE = {
+  nyc: 7500,
+  chicago: 3200,
+  dc: 3400,
+  boston: 3600,
+  la: 3300,
+  miami: 3500
 };
 
 function computeFinalPremium(base, { dmvPoints, tlcPoints, vehicleType, yearsLicensed }) {
@@ -80,39 +98,31 @@ router.post('/get-quotes', cacheMiddleware(600), async (req, res) => {
     const { dmvPoints, tlcPoints, vehicleType, yearsLicensed } = value;
     const city = req.city || 'nyc';
     const carriers = CITY_CARRIERS[city] || CITY_CARRIERS.nyc;
+    const base = CITY_BASE_ESTIMATE[city] || CITY_BASE_ESTIMATE.nyc;
 
-    const quotes = carriers
-      .map(({ provider, base }) => {
-        const finalPremium = computeFinalPremium(base, { dmvPoints, tlcPoints, vehicleType, yearsLicensed });
-        return {
-          provider,
-          finalPremium,
-          monthlyPremium: Math.round(finalPremium / 12),
-          city,
-          affiliateLink: `https://affiliate.example.com/${city}/${encodeURIComponent(provider)}`
-        };
-      })
-      .sort((a, b) => a.finalPremium - b.finalPremium)
-      .map((q, i) => ({ ...q, isBestRate: i === 0 }));
+    const estimatedYearly = computeFinalPremium(base, { dmvPoints, tlcPoints, vehicleType, yearsLicensed });
 
     res.json({
       success: true,
       city,
-      quotes
+      estimate: {
+        yearly: estimatedYearly,
+        monthly: Math.round(estimatedYearly / 12),
+        disclaimer: 'Estimated only -- not an official quote from any insurer.'
+      },
+      carriers: carriers.map(({ provider, website }) => ({ provider, website }))
     });
 
     // Fire-and-forget anonymous usage log. The app has no login, so this
     // is the only signal the admin dashboard has of real driver traffic --
     // it must never be able to fail or delay the response above.
-    const best = quotes[0];
     QuoteLog.create({
       city,
       dmvPoints,
       tlcPoints,
       vehicleType,
       yearsLicensed,
-      bestProvider: best?.provider,
-      bestPremium: best?.finalPremium
+      estimatedYearly
     }).catch((err) => console.error('QuoteLog insert failed:', err.message));
 
   } catch (error) {
